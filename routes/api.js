@@ -64,6 +64,26 @@ module.exports = function (app) {
         return rObj;
       })
       res.json(ret);
+    })
+  
+  
+    .delete(async (req, res) => {
+      const board=req.params.board;
+      const threadId=req.body.thread_id;
+      const delPass=req.body.delete_password;
+    
+      mongoose.connect(process.env.DB, { useNewUrlParser: true });
+      await mongoose.connection.catch(err => console.error(err));
+      const doc=await ThreadModel.findOne({board: board, _id: mongoose.Types.ObjectId(threadId)}).select('delete_password');
+      if(!doc){
+        res.json('no found');
+      }
+      if(doc.delete_password===delPass){
+        await ThreadModel.deleteOne({board: board, _id: mongoose.Types.ObjectId(threadId)});
+        res.json('success');
+      } else{
+        res.json('incorrect password');
+      };
     });
     
   
@@ -95,5 +115,8 @@ module.exports = function (app) {
       await mongoose.connection.catch(err => console.error(err));
       const doc=await ThreadModel.findOne({board: board, _id: mongoose.Types.ObjectId(threadId)}).select('text created_on bumped_on replies');
       res.json(doc);
-    });
+    })
+  
+  
+    .delete(async (req, res) => {});
 };
