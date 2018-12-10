@@ -56,11 +56,14 @@ module.exports = function (app) {
       
       mongoose.connect(process.env.DB, { useNewUrlParser: true });
       await mongoose.connection.catch(err => console.error(err));
-      const doc=await ThreadModel.find({board: board}).select('text created_on bumped_on replies').sort({bumped_on: -1}).limit(10);
-      for(let item of doc){
-        item.replies=item.replies.sort((a,b) => b.created_on-a.created_on).slice(0,3);
-      }
-      res.json(doc);
+      const doc=await ThreadModel.find({board: board}).select('-reported -delete_password -replies.delete_password -__v').sort({bumped_on: -1}).limit(10);
+      const ret=doc.map(x => {
+        const rObj = Object.assign({}, x._doc);
+        rObj.replycount=rObj.replies.length;
+        rObj.replies=rObj.replies.sort((a,b) => b.created_on-a.created_on).slice(0,3);
+        return rObj;
+      })
+      res.json(ret);
     });
     
   
@@ -84,5 +87,13 @@ module.exports = function (app) {
       res.redirect('/b/'+board+'/'+threadId);
     })
   
-    .get(async (req, res) => {});
+    .get(async (req, res) => {
+      const board=req.params.board;
+      const threadId=req.query.thread_id;
+      
+      mongoose.connect(process.env.DB, { useNewUrlParser: true });
+      await mongoose.connection.catch(err => console.error(err));
+      const doc=await ThreadModel.findOne({board: board, _id: mongoose.Types.ObjectId(threadId)}).select('text created_on bumped_on replies');
+      res.json(doc);
+    });
 };
