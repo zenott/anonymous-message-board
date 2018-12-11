@@ -85,6 +85,17 @@ module.exports = function (app) {
       } else{
         res.json('incorrect password');
       };
+    })
+  
+  
+    .put(async (req, res) => {
+      const board=req.params.board;
+      const threadId=req.body.report_id;
+    
+      mongoose.connect(process.env.DB, { useNewUrlParser: true });
+      await mongoose.connection.catch(err => console.error(err));
+      await ThreadModel.updateOne({board: board, _id: mongoose.Types.ObjectId(threadId)}, { $set: { reported : true } });
+      res.json('success');
     });
     
   
@@ -134,10 +145,22 @@ module.exports = function (app) {
       }
       const replyDoc=doc.replies.id(mongoose.Types.ObjectId(replyId));
       if(replyDoc.delete_password===delPass){
-        const doc=await ThreadModel.updateOne({'replies._id': mongoose.Types.ObjectId(replyId)}, { $set: { 'replies.$.text' : '[deleted]' } });
+        const doc=await ThreadModel.updateOne({board: board, 'replies._id': mongoose.Types.ObjectId(replyId)}, { $set: { 'replies.$.text' : '[deleted]' } });
         res.json('success');
       } else{
         res.json('incorrect password');
       };
+    })
+  
+  
+    .put(async (req, res) => {
+      const board=req.params.board;
+      const threadId=req.body.thread_id;
+      const replyId=req.body.reply_id;
+    
+      mongoose.connect(process.env.DB, { useNewUrlParser: true });
+      await mongoose.connection.catch(err => console.error(err));
+      await ThreadModel.updateOne({board: board, _id: mongoose.Types.ObjectId(threadId), 'replies._id': replyId}, { $set: { 'replies.$.reported' : true } });
+      res.json('success');
     });
 };
